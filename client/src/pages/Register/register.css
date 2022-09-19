@@ -1,0 +1,15 @@
+.Register_RegisterForm {
+  width: 70%;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media only screen and (max-width: 600px) {
+  .Register_RegisterForm {
+    width: 90%;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

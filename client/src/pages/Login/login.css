@@ -1,0 +1,15 @@
+.Login_LoginForm {
+  width: 70%;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media only screen and (max-width: 600px) {
+  .Login_LoginForm {
+    width: 90%;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
