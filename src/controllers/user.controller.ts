@@ -1,59 +1,32 @@
+import * as userService from "../services/user.service";
 import { Response, Request } from "express";
-import User from "../models/user.model";
 import * as dotenv from "dotenv";
+import { GET_USER_CONFIG } from "../configs/constants.config";
+import { parseIntQuery } from "../utils/parseIntQuery.util";
+import {
+  UpdateUserDto,
+  UserDto,
+  UserLoginDTO,
+  UserRegisterDTO,
+} from "../dtos/user.dto";
 dotenv.config();
-
-import { validateOrReject, Length } from "class-validator";
-import { comparePassword, generateHashedPassword } from "../utils/bcrypt.util";
-import Todo from "../models/todo.model";
-import { authenticateUser, createUser } from "../services/user.service";
-
-// admin
-// get /user - list user
-// => bao nhieu todo
-
-export class UserRegisterDTO {
-  constructor(name: string, username: string, password: string, role: string) {
-    this.name = name;
-    this.username = username;
-    this.password = password;
-    this.role = role;
-  }
-
-  @Length(6, 20)
-  username: string;
-
-  @Length(6, 20)
-  name: string;
-
-  @Length(6, 20)
-  password: string;
-
-  @Length(3, 10)
-  role: string;
-}
-
-export class UserLoginDTO {
-  constructor(username: string, password: string) {
-    this.username = username;
-    this.password = password;
-  }
-
-  @Length(6, 20)
-  username: string;
-
-  @Length(6, 20)
-  password: string;
-}
 
 // Desc       register
 // Route      POST /users
 // Access     PUBLIC
 export const register = async (req: Request, res: Response) => {
   try {
-    console.log(req.file);
+    const { name, username, password, role } = req.body;
+    const file = req.file;
+    const userRegisterDto = new UserRegisterDTO(
+      name,
+      username,
+      password,
+      role,
+      file
+    );
 
-    let user = await createUser(req.body, req.file);
+    let user = await userService.createUser(userRegisterDto);
 
     res.status(200).json(user);
   } catch (errors: Error | any) {
@@ -70,7 +43,10 @@ export const register = async (req: Request, res: Response) => {
 // Access     PUBLIC
 export const login = async (req: Request, res: Response) => {
   try {
-    let user = await authenticateUser(req.body);
+    const { username, password } = req.body;
+    let userLoginDto = new UserLoginDTO(username, password);
+
+    let user = await userService.authenticateUser(userLoginDto);
 
     res.status(200).json(user);
   } catch (errors: Error | any) {
@@ -82,29 +58,66 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-// controller => res.json()
-// code => goi service
-// service => handle business => createUser =>
-
 // Desc       get users
 // Route      POST /users/admin/getUsers
 // Access     PRIVATE
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const users = await User.findAll({
-      where: {
-        role: "user",
-      },
-      include: [
-        {
-          model: Todo,
-          limit: 2,
-        },
-      ],
-    });
+    let { todoLimit, userLimit, userPage }: any = req.query;
 
-    res.status(200).json(users);
-  } catch (error: any) {
-    res.status(401).json({ error: error.message });
+    todoLimit = parseIntQuery(todoLimit, GET_USER_CONFIG.TODO_LIMIT);
+    userPage = parseIntQuery(userPage, GET_USER_CONFIG.USER_PAGE);
+    userLimit = parseIntQuery(userLimit, GET_USER_CONFIG.USER_LIMIT);
+
+    let records = await userService.getUsers(userLimit, userPage, todoLimit);
+
+    res.status(200).json(records);
+  } catch (error: Error | any) {
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json(error);
+    }
+  }
+};
+
+// Desc       update avatar for user
+// Route      POST /users/admin/user/:id
+// Access     PRIVATE,
+export const updateAvatarForUser = async (req: Request, res: Response) => {
+  try {
+    const file = req.file;
+    const { id } = req.params;
+
+    await userService.updateAvatarForUser(file, id);
+
+    res.status(200).json({ message: "Update user's avatar successfully" });
+  } catch (error: Error | any) {
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json(error);
+    }
+  }
+};
+
+// Desc       update user
+// Route      POST /users/edit
+// Access     PRIVATE
+export const updateUser = async (req: Request, res: Response) => {
+  try {
+    const { name, username } = req.body;
+    const { id } = req.user;
+    const file = req.file;
+
+    await userService.updateUser(name, username, id, file);
+
+    res.status(200).json({ message: "Update successfully" });
+  } catch (error: Error | any) {
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json(error);
+    }
   }
 };

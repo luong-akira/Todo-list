@@ -2,6 +2,9 @@ import { Sequelize, DataTypes } from "sequelize";
 import { sequelize } from "../configs/db.config";
 import Todo from "./todo.model";
 import jwt from "jsonwebtoken";
+import path from "path";
+import fs from "fs";
+import { userInfo } from "os";
 
 const User = sequelize.define("user", {
   id: {
@@ -17,6 +20,16 @@ const User = sequelize.define("user", {
 
   avatar: {
     type: DataTypes.STRING,
+  },
+
+  avatarFullUrl: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      const avatar = this.getDataValue("avatar");
+      if (avatar) {
+        return process.env.BASE_RESOURCE_URL + this.getDataValue("avatar");
+      }
+    },
   },
 
   username: {
@@ -37,7 +50,7 @@ const User = sequelize.define("user", {
   },
 });
 
-User.hasMany(Todo, { foreignKey: "user_id", onDelete: "CASCADE", hooks: true });
+User.hasMany(Todo, { onDelete: "CASCADE", hooks: true });
 Todo.belongsTo(User);
 
 User.prototype.generateToken = function (): string {
@@ -47,6 +60,12 @@ User.prototype.generateToken = function (): string {
   );
   return token;
 };
+
+// delete old avatar
+// User.afterSave()
+
+// refactor code hash passwor using hook beforeSave
+// User.beforeSave()
 
 (async () => {
   await sequelize.sync();

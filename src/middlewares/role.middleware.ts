@@ -8,7 +8,7 @@ export const role = (roles: string[]) => {
         next();
       } else {
         throw new Error(
-          `User with role ${req.user.role} can not access this route`
+          `User with role: ${req.user.role} can not access this route`
         );
       }
     } catch (error: Error | any) {

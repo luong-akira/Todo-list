@@ -11,3 +11,5 @@ uploads/
 !.yarn/cache
 #.pnp.*
 
+node_modules
+.env

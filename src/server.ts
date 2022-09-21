@@ -4,6 +4,7 @@ import todoRoutes from "./routes/todo.route";
 import path from "path";
 import { sequelize } from "./configs/db.config";
 import * as dotenv from "dotenv";
+import { ROOT_DIR, UPLOAD_FOLDER_CONFIG } from "./configs/constants.config";
 dotenv.config();
 
 const app: Express = express();
@@ -21,7 +22,10 @@ let PORT = process.env.PORT || 5000;
 
 console.log();
 
-app.use("/uploads", express.static(path.join(__dirname, "../", "uploads")));
+app.use(
+  `/${UPLOAD_FOLDER_CONFIG.DIRNAME}`,
+  express.static(path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME))
+);
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 

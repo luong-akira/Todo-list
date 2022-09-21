@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import { isLoggedIn } from "../middlewares/isLoggedIn";
+import { isAuthenticated } from "../middlewares/isAuthenticated.middleware";
 import {
   getAllTodos,
   getTodoById,
@@ -9,10 +9,12 @@ import {
   deleteTodo,
 } from "../controllers/todo.controller";
 
-router.get("/", isLoggedIn, getAllTodos);
-router.get("/:id", isLoggedIn, getTodoById);
-router.post("/", isLoggedIn, createTodo);
-router.put("/:id", isLoggedIn, updateTodo);
-router.delete("/:id", isLoggedIn, deleteTodo);
+router.get("/", isAuthenticated, getAllTodos);
+router.get("/:id", isAuthenticated, getTodoById);
+router.post("/", isAuthenticated, createTodo);
+router.put("/:id", isAuthenticated, updateTodo);
+router.delete("/:id", isAuthenticated, deleteTodo);
+// import todo from excel (by user) - exceljs
+// stt|title|body|status
 
 export default router;
