@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 import path from "path";
 import fs from "fs";
 import { userInfo } from "os";
+import { generateHashedPassword } from "../utils/bcrypt.util";
+import { ROOT_DIR } from "../configs/constants.config";
 
 const User = sequelize.define("user", {
   id: {
@@ -61,11 +63,19 @@ User.prototype.generateToken = function (): string {
   return token;
 };
 
-// delete old avatar
-// User.afterSave()
+// Delete old avatar after save
+User.afterUpdate((user: any) => {
+  if (user.changed("avatar")) {
+    if (user._previousDataValues.avatar) {
+      fs.unlinkSync(path.join(ROOT_DIR, user._previousDataValues.avatar));
+    }
+  }
+});
 
-// refactor code hash passwor using hook beforeSave
-// User.beforeSave()
+// Hash password before save
+User.beforeSave((user: any) => {
+  user.password = generateHashedPassword(user.password);
+});
 
 (async () => {
   await sequelize.sync();

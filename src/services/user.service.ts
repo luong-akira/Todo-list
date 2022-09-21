@@ -104,13 +104,7 @@ export async function updateUser(
     username,
   });
 
-  if (file) {
-    if (user.avatar) {
-      fs.unlinkSync(path.join(ROOT_DIR, user.avatar));
-    }
-
-    user.avatar = `/${file.path.replace("\\", "/")}`;
-  }
+  user.avatar = `/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${file.filename}`;
 
   await user.save();
 }
@@ -125,10 +119,6 @@ export async function updateAvatarForUser(file: any, id: string) {
   });
 
   if (!user) throw new Error("User does not exist");
-
-  if (user.avatar) {
-    fs.unlinkSync(path.join(ROOT_DIR, user.avatar));
-  }
 
   user.avatar = `/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${file.filename}`;
 
@@ -159,7 +149,7 @@ export async function getUsers(
 
   let userArr = users.map((user: any) => user.getDataValue("id"));
 
-  let todos = await Todo.findAll({
+  let todos: any = await Todo.findAll({
     where: {
       userId: {
         [Op.in]: userArr,
@@ -172,17 +162,13 @@ export async function getUsers(
     ],
     group: ["user_id"],
   });
-  // map | hashmap
-  // const todoMapping = {};
+
+  const todoArr: any[] = todos.map((todo: any) => todo.dataValues);
+
+  const map = new Map(todoArr.map((todo) => [todo.user_id, todo.todoCount]));
 
   users.forEach((user: any) => {
-    // // console.log(user.getDataValue("id"));
-    // user.todoCount = todoMapping[user.getDataValue("id")]?.todoCount || 0;
-    // // todos.forEach((todo) => {
-    // //   if (user.getDataValue("id") == todo.getDataValue("user_id")) {
-    // //     user.dataValues.todoCount = todo.getDataValue("todoCount");
-    // //   }
-    // // });
+    user.dataValues.todoCount = map.get(user.getDataValue("id")) || 0;
   });
 
   return users;
