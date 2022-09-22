@@ -190,8 +190,8 @@ export async function uploadTodoFromExcel(userId: string, file: any) {
 // stt, id, title, body, status, userid, username, createdDate
 export async function exportToExcel(
   userId: string,
-  dirpath: string = "E:/",
-  filename: string = "new_excel.xlsx"
+  dirpath: string,
+  filename: string
 ) {
   let todos = await Todo.findAll({
     where: {
