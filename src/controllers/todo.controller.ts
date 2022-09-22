@@ -1,7 +1,10 @@
-import Todo from "../models/todo.model";
 import { Request, Response } from "express";
 import * as todoServices from "../services/todo.service";
-import { stat } from "fs";
+import { ROOT_DIR } from "../configs/constants.config";
+import Excel from "exceljs";
+import path from "path";
+import request from "request";
+import Todo from "../models/todo.model";
 
 // Desc      get all todos from a user
 // Route     GET /todos
@@ -102,6 +105,25 @@ export const updateTodo = async (req: Request, res: Response) => {
     let todo = await todoServices.updateTodo(title, body, status, userId, id);
 
     res.status(200).json(todo);
+  } catch (errors: Error | any) {
+    if (errors instanceof Error) {
+      res.status(500).json({ error: errors.message });
+    } else {
+      res.status(500).json(errors);
+    }
+  }
+};
+
+// Desc      Upload from a excel file
+// Route     PUT /todos/fromExcel
+// Access    PRIVATE
+export const uploadFromExcelFile = async (req: Request, res: Response) => {
+  try {
+    let userId = req.user.id;
+
+    await todoServices.uploadTodoFromExcel(userId);
+
+    res.status(201).json({ message: "Upload successfully" });
   } catch (errors: Error | any) {
     if (errors instanceof Error) {
       res.status(500).json({ error: errors.message });

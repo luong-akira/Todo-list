@@ -1,9 +1,11 @@
 import { validateOrReject } from "class-validator";
 import { Op } from "sequelize";
-import { PAGING_CONFIG } from "../configs/constants.config";
+import { PAGING_CONFIG, ROOT_DIR } from "../configs/constants.config";
 import { TodoDto } from "../dtos/todo.dto";
 import Todo from "../models/todo.model";
+import Excel from "exceljs";
 import { parseIntQuery } from "../utils/parseIntQuery.util";
+import path from "path";
 
 export async function getAllTodos(
   page: any,
@@ -58,7 +60,8 @@ export async function createTodo(
   title: string,
   body: string,
   status: string,
-  userId: string
+  userId: string,
+  id?: number
 ) {
   let todoDto = new TodoDto(title, body);
 
@@ -122,4 +125,64 @@ export async function updateTodo(
   await validateOrReject(todoDto);
 
   await todo.save();
+}
+
+export async function uploadTodoFromExcel(userId: string) {
+  const workBook = new Excel.Workbook();
+  await workBook.xlsx.readFile(path.join(ROOT_DIR, "excel.xlsx"));
+
+  let idColumNum: number;
+  let titleColumNum: number;
+  let bodyColumNum: number;
+  let statusColumNum: number;
+
+  workBook
+    .getWorksheet(1)
+    .eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      (async () => {
+        row.eachCell(function (cell, columNumber) {
+          if (cell.value == "id") {
+            idColumNum = columNumber;
+          } else if (cell.value == "title") {
+            titleColumNum = columNumber;
+          } else if (cell.value == "body") {
+            bodyColumNum = columNumber;
+          } else if (cell.value == "status") {
+            statusColumNum = columNumber;
+          }
+        });
+        if (rowNumber !== 1) {
+          let obj: any = {
+            title: row.getCell(titleColumNum).value,
+            body: row.getCell(bodyColumNum).value,
+          };
+
+          if (idColumNum) {
+            if (parseInt(row.getCell(idColumNum).value as string)) {
+              obj.id = row.getCell(idColumNum).value;
+            }
+          }
+
+          if (statusColumNum) obj.status = row.getCell(statusColumNum).value;
+
+          let todo;
+
+          if (obj.id) {
+            todo = await Todo.findOne({
+              where: {
+                id: obj.id,
+              },
+            });
+
+            if (todo) {
+              createTodo(obj.title, obj.body, obj.status, userId);
+            } else {
+              createTodo(obj.title, obj.body, obj.status, userId, obj.id);
+            }
+          } else {
+            createTodo(obj.title, obj.body, obj.status, userId);
+          }
+        }
+      })();
+    });
 }

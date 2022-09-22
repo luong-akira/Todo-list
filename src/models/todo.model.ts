@@ -14,6 +14,7 @@ const Todo = sequelize.define("todo", {
   status: {
     type: DataTypes.ENUM,
     values: ["done", "none"],
+    defaultValue: "none",
   },
 });
 
