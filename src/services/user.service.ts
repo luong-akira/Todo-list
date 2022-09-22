@@ -80,20 +80,16 @@ export async function authenticateUser(userLoginDto: UserLoginDTO) {
   };
 }
 
-export async function updateUser(
-  name: string,
-  username: string,
-  id: string,
-  file: any
-) {
+export async function updateUser(content: any, id: string, file: any) {
   let user: any = await User.findOne({
     where: {
       id,
     },
   });
+
   if (!user) throw new Error("User does not exist");
-  name = name || user.name;
-  username = username || user.username;
+  let name = content.name || user.name;
+  let username = content.username || user.username;
 
   const updateUserDto = new UpdateUserDto(name, username);
 

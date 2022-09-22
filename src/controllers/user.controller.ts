@@ -109,8 +109,9 @@ export const updateUser = async (req: Request, res: Response) => {
     const { name, username } = req.body;
     const { id } = req.user;
     const file = req.file;
+    let content = { name, username };
 
-    await userService.updateUser(name, username, id, file);
+    await userService.updateUser(content, id, file);
 
     res.status(200).json({ message: "Update successfully" });
   } catch (error: Error | any) {

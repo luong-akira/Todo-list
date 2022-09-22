@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import * as todoServices from "../services/todo.service";
-import { ROOT_DIR } from "../configs/constants.config";
+import { ROOT_DIR, UPLOAD_FOLDER_CONFIG } from "../configs/constants.config";
 import Excel from "exceljs";
 import path from "path";
+import fs from "fs";
 import request from "request";
 import Todo from "../models/todo.model";
 
@@ -60,8 +61,9 @@ export const createTodo = async (req: Request, res: Response) => {
   try {
     let { title, body, status } = req.body;
     let userId = req.user.id;
+    let content = { title, body, status, userId };
 
-    let todo = await todoServices.createTodo(title, body, status, userId);
+    let todo = await todoServices.createTodo(content);
 
     res.status(200).json(todo);
   } catch (errors: Error | any) {
@@ -100,9 +102,15 @@ export const updateTodo = async (req: Request, res: Response) => {
   try {
     const { title, body, status } = req.body;
     const userId = req.user.id;
-    const id = req.params.id;
+    let id: any = req.params.id;
 
-    let todo = await todoServices.updateTodo(title, body, status, userId, id);
+    id = parseInt(id);
+
+    if (isNaN(id)) throw new Error("id is not a number");
+
+    let content = { title, body, status, userId };
+
+    let todo = await todoServices.updateTodo(content, id);
 
     res.status(200).json(todo);
   } catch (errors: Error | any) {
@@ -115,13 +123,39 @@ export const updateTodo = async (req: Request, res: Response) => {
 };
 
 // Desc      Upload from a excel file
-// Route     PUT /todos/fromExcel
+// Route     POST /todos/importFromExcel
 // Access    PRIVATE
-export const uploadFromExcelFile = async (req: Request, res: Response) => {
+export const importFromExcelFile = async (req: Request, res: Response) => {
   try {
+    if (!req.file) throw new Error("File not found");
     let userId = req.user.id;
+    let file = req.file;
 
-    await todoServices.uploadTodoFromExcel(userId);
+    await todoServices.uploadTodoFromExcel(userId, file);
+
+    fs.unlinkSync(
+      path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME, file.filename)
+    );
+
+    res.status(201).json({ message: "Upload successfully" });
+  } catch (errors: Error | any) {
+    if (errors instanceof Error) {
+      res.status(500).json({ error: errors.message });
+    } else {
+      res.status(500).json(errors);
+    }
+  }
+};
+
+// Desc      Export to excel file
+// Route     GET /todos/exportToExcel
+// Access    PRIVATE
+export const exportToExcel = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.id;
+    const { dirpath, filename } = req.body;
+
+    await todoServices.exportToExcel(userId, dirpath, filename);
 
     res.status(201).json({ message: "Upload successfully" });
   } catch (errors: Error | any) {

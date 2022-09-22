@@ -13,3 +13,10 @@ export const UPLOAD_FOLDER_CONFIG = {
 };
 
 export const ROOT_DIR = process.cwd();
+
+export const TODO_COL_NAME = {
+  TODO_ID_COL_NAME: "id",
+  TODO_TITLE_COL_NAME: "title",
+  TODO_BODY_COL_NAME: "body",
+  TODO_STATUS_COL_NAME: "status",
+};
