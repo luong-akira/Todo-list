@@ -186,13 +186,7 @@ export async function uploadTodoFromExcel(userId: string, file: any) {
     });
 }
 
-// api export ? userId
-// stt, id, title, body, status, userid, username, createdDate
-export async function exportToExcel(
-  userId: string,
-  dirpath: string,
-  filename: string
-) {
+export async function exportToExcel(userId: string, filePath: string) {
   let todos = await Todo.findAll({
     where: {
       userId,
@@ -229,5 +223,5 @@ export async function exportToExcel(
     ]);
   });
 
-  await workBook.xlsx.writeFile(path.join(dirpath, filename));
+  await workBook.xlsx.writeFile(filePath);
 }

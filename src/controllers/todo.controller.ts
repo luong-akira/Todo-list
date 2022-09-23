@@ -153,9 +153,9 @@ export const importFromExcelFile = async (req: Request, res: Response) => {
 export const exportToExcel = async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
-    const { dirpath, filename } = req.body;
+    const { filePath } = req.body;
 
-    await todoServices.exportToExcel(userId, dirpath, filename);
+    await todoServices.exportToExcel(userId, filePath);
 
     res.status(201).json({ message: "Upload successfully" });
   } catch (errors: Error | any) {
