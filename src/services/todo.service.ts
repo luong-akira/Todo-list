@@ -135,6 +135,9 @@ export async function uploadTodoFromExcel(
   file: any,
   workSheetNum: number
 ) {
+  // khac biet stream | hien tai
+  // Excel.stream.xlsx
+
   const workBook = new Excel.Workbook();
   await workBook.xlsx.readFile(
     path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME, file.filename)
@@ -197,15 +200,13 @@ export async function exportToExcel(userId: string) {
     include: [User],
   });
 
-  console.log(todos);
-
   const filename = Date.now() + "-" + Math.round(Math.random() * 1e9) + ".xlsx";
 
   const workBook = new Excel.Workbook();
 
   const workSheet = workBook.addWorksheet("My sheet");
 
-  let row = workSheet.addRow([
+  let headingRow = workSheet.addRow([
     "STT",
     "ID",
     "TITLE",
@@ -216,7 +217,7 @@ export async function exportToExcel(userId: string) {
     "DATE CREATED",
   ]);
 
-  row.font = {
+  headingRow.font = {
     bold: true,
   };
 

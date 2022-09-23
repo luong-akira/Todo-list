@@ -170,3 +170,13 @@ export const exportToExcel = async (req: Request, res: Response) => {
     }
   }
 };
+
+// import - file 5000 -
+
+// export - nhieu du lieu
+
+// tim hieu va xu ly import / export qua ExcelJs.stream
+
+// tim hieu task queue (Bull nodejs) -- (xu ly background job, xu ly task theo queue, xu ly dong bo nhieu task )
+
+// refactor import/export xu ly qua task queue
