@@ -15,13 +15,13 @@ import User from "../models/user.model";
 import { ResourceConfig } from "../configs/enviroment.config";
 
 export async function getAllTodos(
-  page: any,
+  page: number,
   search: any,
-  todosPerPage: any,
+  perPage: number,
   userId: string
 ) {
   page = parseIntQuery(page, 1);
-  todosPerPage = parseIntQuery(todosPerPage, PAGING_CONFIG.LIMIT);
+  perPage = parseIntQuery(perPage, PAGING_CONFIG.LIMIT);
 
   const filterObj: any = {
     userId,
@@ -37,12 +37,12 @@ export async function getAllTodos(
     where: filterObj,
   });
 
-  const totalPage = Math.ceil(todoCount / todosPerPage);
+  const totalPage = Math.ceil(todoCount / perPage);
 
   const todos = await Todo.findAll({
     where: filterObj,
-    limit: todosPerPage,
-    offset: (page - 1) * todosPerPage,
+    limit: perPage,
+    offset: (page - 1) * perPage,
   });
 
   return { data: todos, page, totalPage };
@@ -130,7 +130,7 @@ export async function updateTodo(content: any, id: number) {
   await todo.save();
 }
 
-export async function uploadTodoFromExcel(
+export async function importTodoFromExcel(
   userId: string,
   file: any,
   workSheetNum: number = 1
@@ -191,7 +191,11 @@ export async function uploadTodoFromExcel(
   });
 }
 
-export async function exportToExcel(userId: string) {
+export async function exportToExcel(
+  userId: string,
+  page: number,
+  limit: number
+) {
   let todos = await Todo.findAll({
     where: {
       userId,
@@ -221,18 +225,25 @@ export async function exportToExcel(userId: string) {
     bold: true,
   };
 
-  todos.forEach((todo, index) => {
-    workSheet.addRow([
-      index + 1,
-      todo.getDataValue("id"),
-      todo.getDataValue("title"),
-      todo.getDataValue("body"),
-      todo.getDataValue("status"),
-      todo.getDataValue("userId"),
-      todo.getDataValue("user").username,
-      todo.getDataValue("createdAt").toString(),
-    ]);
-  });
+  let hasMoreData = true;
+  do {
+    const todos = await getAllTodos(page, null, limit, userId);
+    todos.data.forEach((todo, index) => {
+      workSheet.addRow([
+        index + 1,
+        todo.getDataValue("id"),
+        todo.getDataValue("title"),
+        todo.getDataValue("body"),
+        todo.getDataValue("status"),
+        todo.getDataValue("userId"),
+        todo.getDataValue("user").username,
+        todo.getDataValue("createdAt").toString(),
+      ]);
+    });
+
+    hasMoreData = page < todos.totalPage;
+    page++;
+  } while (hasMoreData);
 
   await workBook.xlsx.writeFile(
     path.join(
@@ -246,13 +257,11 @@ export async function exportToExcel(userId: string) {
   return `${ResourceConfig.baseUrl}/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${UPLOAD_FOLDER_CONFIG.EXPORTDIR}/${filename}`;
 }
 
-export async function uploadTodoFromExcelStream(
+export async function importTodoFromExcelStream(
   userId: string,
   file: any,
   workSheetNum: number = 1
 ) {
-  // khac biet stream | hien tai
-  // Excel.stream.xlsx
   const options: any = {
     sharedStrings: "cache",
     hyperlinks: "cache",
@@ -294,15 +303,16 @@ export async function uploadTodoFromExcelStream(
   }
 }
 
-export async function exportToExcelStream(userId: string) {
-  let todos = await Todo.findAll({
-    where: {
-      userId,
-    },
-    order: [["id", "ASC"]],
-    include: [User],
-  });
-
+export async function exportToExcelStream(
+  userId: string,
+  page: number,
+  limit: number
+) {
+  // request paging - 1000
+  // forEachPage(limit=5000)
+  //  items =requestDbByPage(1)
+  //  eachItem:
+  //    - addToFile
   const filename = Date.now() + "-" + Math.round(Math.random() * 1e9) + ".xlsx";
 
   const options = {
@@ -332,23 +342,29 @@ export async function exportToExcelStream(userId: string) {
     bold: true,
   };
 
-  todos.forEach((todo, index) => {
-    workSheet.addRow([
-      index + 1,
-      todo.getDataValue("id"),
-      todo.getDataValue("title"),
-      todo.getDataValue("body"),
-      todo.getDataValue("status"),
-      todo.getDataValue("userId"),
-      todo.getDataValue("user").username,
-      todo.getDataValue("createdAt").toString(),
-    ]);
-  });
+  let hasMoreData = true;
+  do {
+    const todos = await getAllTodos(page, null, limit, userId);
+    todos.data.forEach((todo, index) => {
+      workSheet
+        .addRow([
+          index + 1,
+          todo.getDataValue("id"),
+          todo.getDataValue("title"),
+          todo.getDataValue("body"),
+          todo.getDataValue("status"),
+          todo.getDataValue("userId"),
+          todo.getDataValue("user").username,
+          todo.getDataValue("createdAt").toString(),
+        ])
+        .commit();
+    });
 
-  workSheet.commit();
+    hasMoreData = page < todos.totalPage;
+    page++;
+  } while (hasMoreData);
 
-  workbook.commit().then(function () {
-    console.log(`Worksheet committed!`);
-  });
+  await workbook.commit();
+
   return `${ResourceConfig.baseUrl}/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${UPLOAD_FOLDER_CONFIG.EXPORTDIR}/${filename}`;
 }
