@@ -130,8 +130,13 @@ export const importFromExcelFile = async (req: Request, res: Response) => {
     if (!req.file) throw new Error("File not found");
     let userId = req.user.id;
     let file = req.file;
+    let sheetNum = req.body.sheetNum;
 
-    await todoServices.uploadTodoFromExcel(userId, file);
+    if (isNaN(sheetNum)) throw new Error("Sheetnum is not a number");
+
+    sheetNum = parseInt(sheetNum);
+
+    await todoServices.uploadTodoFromExcel(userId, file, sheetNum);
 
     fs.unlinkSync(
       path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME, file.filename)
@@ -153,11 +158,10 @@ export const importFromExcelFile = async (req: Request, res: Response) => {
 export const exportToExcel = async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
-    const { filePath } = req.body;
 
-    await todoServices.exportToExcel(userId, filePath);
+    let excelLink = await todoServices.exportToExcel(userId);
 
-    res.status(201).json({ message: "Upload successfully" });
+    res.status(201).send(excelLink);
   } catch (errors: Error | any) {
     if (errors instanceof Error) {
       res.status(500).json({ error: errors.message });

@@ -10,6 +10,7 @@ export const GET_USER_CONFIG = {
 
 export const UPLOAD_FOLDER_CONFIG = {
   DIRNAME: "uploads",
+  EXPORTDIR: "export",
 };
 
 export const ROOT_DIR = process.cwd();

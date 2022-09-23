@@ -178,24 +178,27 @@ export async function uploadTodoFromExcel(
         });
 
         if (!todoExist) {
-          createTodo(content);
+          await createTodo(content);
         } else {
-          updateTodo(content, parseInt(todoExist.getDataValue("id")));
+          await updateTodo(content, parseInt(todoExist.getDataValue("id")));
         }
       }
     })();
   });
 }
 
-export async function exportToExcel(userId: string, filePath: string) {
+export async function exportToExcel(userId: string) {
   let todos = await Todo.findAll({
     where: {
       userId,
     },
+    order: [["id", "ASC"]],
     include: [User],
   });
 
   console.log(todos);
+
+  const filename = Date.now() + "-" + Math.round(Math.random() * 1e9) + ".xlsx";
 
   const workBook = new Excel.Workbook();
 
@@ -208,6 +211,7 @@ export async function exportToExcel(userId: string, filePath: string) {
     "BODY",
     "STATUS",
     "USER ID",
+    "USERNAME",
     "DATE CREATED",
   ]);
 
@@ -223,9 +227,24 @@ export async function exportToExcel(userId: string, filePath: string) {
       todo.getDataValue("body"),
       todo.getDataValue("status"),
       todo.getDataValue("userId"),
+      todo.getDataValue("user").username,
       todo.getDataValue("createdAt").toString(),
     ]);
   });
 
-  await workBook.xlsx.writeFile(filePath);
+  await workBook.xlsx.writeFile(
+    path.join(
+      ROOT_DIR,
+      UPLOAD_FOLDER_CONFIG.DIRNAME,
+      UPLOAD_FOLDER_CONFIG.EXPORTDIR,
+      filename
+    )
+  );
+
+  return path.join(
+    process.env.BASE_RESOURCE_URL as string,
+    UPLOAD_FOLDER_CONFIG.DIRNAME,
+    UPLOAD_FOLDER_CONFIG.EXPORTDIR,
+    filename
+  );
 }
