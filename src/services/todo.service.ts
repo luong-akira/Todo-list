@@ -133,7 +133,7 @@ export async function updateTodo(content: any, id: number) {
 export async function uploadTodoFromExcel(
   userId: string,
   file: any,
-  workSheetNum: number
+  workSheetNum: number = 1
 ) {
   // khac biet stream | hien tai
   // Excel.stream.xlsx
@@ -243,5 +243,112 @@ export async function exportToExcel(userId: string) {
     )
   );
 
+  return `${ResourceConfig.baseUrl}/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${UPLOAD_FOLDER_CONFIG.EXPORTDIR}/${filename}`;
+}
+
+export async function uploadTodoFromExcelStream(
+  userId: string,
+  file: any,
+  workSheetNum: number = 1
+) {
+  // khac biet stream | hien tai
+  // Excel.stream.xlsx
+  const options: any = {
+    sharedStrings: "cache",
+    hyperlinks: "cache",
+    worksheets: "emit",
+    styles: "cache",
+  };
+
+  const workBookReader = new Excel.stream.xlsx.WorkbookReader(
+    path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME, file.filename),
+    options
+  );
+
+  for await (const workSheetReader of workBookReader) {
+    for await (const row of workSheetReader) {
+      if (row.number <= 1) {
+      } else {
+        let content: any = {
+          title: row.getCell(2).value,
+          body: row.getCell(3).value,
+          userId,
+        };
+
+        if (row.getCell(4).value) content.status = row.getCell(4).value;
+
+        const todoExist = await Todo.findOne({
+          where: {
+            title: content.title,
+            userId,
+          },
+        });
+
+        if (!todoExist) {
+          await createTodo(content);
+        } else {
+          await updateTodo(content, parseInt(todoExist.getDataValue("id")));
+        }
+      }
+    }
+  }
+}
+
+export async function exportToExcelStream(userId: string) {
+  let todos = await Todo.findAll({
+    where: {
+      userId,
+    },
+    order: [["id", "ASC"]],
+    include: [User],
+  });
+
+  const filename = Date.now() + "-" + Math.round(Math.random() * 1e9) + ".xlsx";
+
+  const options = {
+    filename: path.join(
+      ROOT_DIR,
+      UPLOAD_FOLDER_CONFIG.DIRNAME,
+      UPLOAD_FOLDER_CONFIG.EXPORTDIR,
+      filename
+    ),
+    useStyles: true,
+  };
+
+  const workbook = new Excel.stream.xlsx.WorkbookWriter(options);
+  const workSheet = workbook.addWorksheet("My sheet");
+  let headingRow = workSheet.addRow([
+    "STT",
+    "ID",
+    "TITLE",
+    "BODY",
+    "STATUS",
+    "USER ID",
+    "USERNAME",
+    "DATE CREATED",
+  ]);
+
+  headingRow.font = {
+    bold: true,
+  };
+
+  todos.forEach((todo, index) => {
+    workSheet.addRow([
+      index + 1,
+      todo.getDataValue("id"),
+      todo.getDataValue("title"),
+      todo.getDataValue("body"),
+      todo.getDataValue("status"),
+      todo.getDataValue("userId"),
+      todo.getDataValue("user").username,
+      todo.getDataValue("createdAt").toString(),
+    ]);
+  });
+
+  workSheet.commit();
+
+  workbook.commit().then(function () {
+    console.log(`Worksheet committed!`);
+  });
   return `${ResourceConfig.baseUrl}/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${UPLOAD_FOLDER_CONFIG.EXPORTDIR}/${filename}`;
 }
