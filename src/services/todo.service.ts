@@ -41,6 +41,7 @@ export async function getAllTodos(
 
   const todos = await Todo.findAll({
     where: filterObj,
+    include: [User],
     limit: perPage,
     offset: (page - 1) * perPage,
   });
@@ -193,7 +194,7 @@ export async function importTodoFromExcel(
 
 export async function exportToExcel(
   userId: string,
-  page: number,
+  requestPage: number,
   limit: number
 ) {
   let todos = await Todo.findAll({
@@ -225,10 +226,15 @@ export async function exportToExcel(
     bold: true,
   };
 
+  let index = 1;
+  let page = requestPage;
+
   let hasMoreData = true;
+
   do {
     const todos = await getAllTodos(page, null, limit, userId);
-    todos.data.forEach((todo, index) => {
+    todos.data.forEach((todo) => {
+      index += 1;
       workSheet.addRow([
         index + 1,
         todo.getDataValue("id"),
@@ -305,7 +311,7 @@ export async function importTodoFromExcelStream(
 
 export async function exportToExcelStream(
   userId: string,
-  page: number,
+  requestPage: number,
   limit: number
 ) {
   // request paging - 1000
@@ -343,12 +349,19 @@ export async function exportToExcelStream(
   };
 
   let hasMoreData = true;
+
+  let page = requestPage;
+
+  let index = 1;
+
   do {
     const todos = await getAllTodos(page, null, limit, userId);
-    todos.data.forEach((todo, index) => {
+    todos.data.forEach((todo) => {
+      index += 1;
+
       workSheet
         .addRow([
-          index + 1,
+          index,
           todo.getDataValue("id"),
           todo.getDataValue("title"),
           todo.getDataValue("body"),

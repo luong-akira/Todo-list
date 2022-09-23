@@ -8,7 +8,7 @@ export const GET_USER_CONFIG = {
   USER_PAGE: 1,
 };
 
-export const DATA_IMPORT_EXPORT_LIMIT_DEFAULT = 500;
+export const DATA_IMPORT_EXPORT_LIMIT_DEFAULT = 300;
 export const DATA_PAGE_DEFAULT = 1;
 
 export const UPLOAD_FOLDER_CONFIG = {
