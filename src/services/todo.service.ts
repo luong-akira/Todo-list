@@ -11,6 +11,7 @@ import Todo from "../models/todo.model";
 import Excel from "exceljs";
 import { parseIntQuery } from "../utils/parseIntQuery.util";
 import path from "path";
+import User from "../models/user.model";
 
 export async function getAllTodos(
   page: any,
@@ -128,7 +129,11 @@ export async function updateTodo(content: any, id: number) {
   await todo.save();
 }
 
-export async function uploadTodoFromExcel(userId: string, file: any) {
+export async function uploadTodoFromExcel(
+  userId: string,
+  file: any,
+  workSheetNum: number
+) {
   const workBook = new Excel.Workbook();
   await workBook.xlsx.readFile(
     path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME, file.filename)
@@ -140,50 +145,46 @@ export async function uploadTodoFromExcel(userId: string, file: any) {
 
   let rowHeader = 1;
 
-  workBook
-    .getWorksheet(1)
-    .getRow(rowHeader)
-    .eachCell((cell, columNumber) => {
-      if (cell.value == TODO_COL_NAME.TODO_TITLE_COL_NAME) {
-        titleColumNum = columNumber;
-      } else if (cell.value == TODO_COL_NAME.TODO_BODY_COL_NAME) {
-        bodyColumNum = columNumber;
-      } else if (cell.value == TODO_COL_NAME.TODO_STATUS_COL_NAME) {
-        statusColumNum = columNumber;
-      }
-    });
+  let workSheet = workBook.getWorksheet(workSheetNum);
 
-  workBook
-    .getWorksheet(1)
-    .eachRow({ includeEmpty: false }, (row, rowNumber) => {
-      (async () => {
-        if (rowNumber <= rowHeader) {
-          return;
-        } else if (rowNumber > 1) {
-          let content: any = {
-            title: row.getCell(titleColumNum).value,
-            body: row.getCell(bodyColumNum).value,
+  workSheet.getRow(rowHeader).eachCell((cell, columNumber) => {
+    if (cell.value == TODO_COL_NAME.TODO_TITLE_COL_NAME) {
+      titleColumNum = columNumber;
+    } else if (cell.value == TODO_COL_NAME.TODO_BODY_COL_NAME) {
+      bodyColumNum = columNumber;
+    } else if (cell.value == TODO_COL_NAME.TODO_STATUS_COL_NAME) {
+      statusColumNum = columNumber;
+    }
+  });
+
+  workSheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    (async () => {
+      if (rowNumber <= rowHeader) {
+        return;
+      } else if (rowNumber > 1) {
+        let content: any = {
+          title: row.getCell(titleColumNum).value,
+          body: row.getCell(bodyColumNum).value,
+          userId,
+        };
+
+        if (statusColumNum) content.status = row.getCell(statusColumNum).value;
+
+        const todoExist = await Todo.findOne({
+          where: {
+            title: content.title,
             userId,
-          };
+          },
+        });
 
-          if (statusColumNum)
-            content.status = row.getCell(statusColumNum).value;
-
-          const todoExist = await Todo.findOne({
-            where: {
-              title: content.title,
-              userId,
-            },
-          });
-
-          if (!todoExist) {
-            createTodo(content);
-          } else {
-            updateTodo(content, parseInt(todoExist.getDataValue("id")));
-          }
+        if (!todoExist) {
+          createTodo(content);
+        } else {
+          updateTodo(content, parseInt(todoExist.getDataValue("id")));
         }
-      })();
-    });
+      }
+    })();
+  });
 }
 
 export async function exportToExcel(userId: string, filePath: string) {
@@ -191,7 +192,10 @@ export async function exportToExcel(userId: string, filePath: string) {
     where: {
       userId,
     },
+    include: [User],
   });
+
+  console.log(todos);
 
   const workBook = new Excel.Workbook();
 
