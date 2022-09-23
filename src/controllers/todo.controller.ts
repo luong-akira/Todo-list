@@ -161,7 +161,7 @@ export const exportToExcel = async (req: Request, res: Response) => {
 
     let excelLink = await todoServices.exportToExcel(userId);
 
-    res.status(201).send(excelLink);
+    res.status(201).json(excelLink);
   } catch (errors: Error | any) {
     if (errors instanceof Error) {
       res.status(500).json({ error: errors.message });

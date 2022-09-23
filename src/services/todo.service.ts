@@ -12,6 +12,7 @@ import Excel from "exceljs";
 import { parseIntQuery } from "../utils/parseIntQuery.util";
 import path from "path";
 import User from "../models/user.model";
+import { ResourceConfig } from "../configs/enviroment.config";
 
 export async function getAllTodos(
   page: any,
@@ -241,10 +242,5 @@ export async function exportToExcel(userId: string) {
     )
   );
 
-  return path.join(
-    process.env.BASE_RESOURCE_URL as string,
-    UPLOAD_FOLDER_CONFIG.DIRNAME,
-    UPLOAD_FOLDER_CONFIG.EXPORTDIR,
-    filename
-  );
+  return `${ResourceConfig.baseUrl}/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${UPLOAD_FOLDER_CONFIG.EXPORTDIR}/${filename}`;
 }
