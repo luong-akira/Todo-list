@@ -58,6 +58,24 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+// Desc       Get token
+// Route      POST /users/login
+// Access     PUBLIC
+export const getToken = async (req: Request, res: Response) => {
+  try {
+    const {refreshToken,userId} = req.body;
+    let token = await userService.getToken(refreshToken,userId);
+
+    res.status(200).json({token});
+  } catch (errors: Error | any) {
+    if (errors instanceof Error) {
+      res.status(500).json({ error: errors.message });
+    } else {
+      res.status(500).json(errors);
+    }
+  }
+};
+
 // Desc       get users
 // Route      POST /users/admin/getUsers
 // Access     PRIVATE

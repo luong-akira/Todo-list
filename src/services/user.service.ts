@@ -9,6 +9,9 @@ import { Sequelize, Op } from "sequelize";
 import Todo from "../models/todo.model";
 import { sequelize } from "../configs/db.config";
 import { ROOT_DIR, UPLOAD_FOLDER_CONFIG } from "../configs/constants.config";
+import randToken from "rand-token";
+let refreshTokens:any = {};
+
 
 export async function createUser(userRegisterDto: UserRegisterDTO) {
   await validateOrReject(userRegisterDto);
@@ -69,6 +72,8 @@ export async function authenticateUser(userLoginDto: UserLoginDTO) {
     throw new Error("Invalid credentials");
 
   const token = user.generateToken();
+  const refreshToken = randToken.uid(50)
+  refreshTokens[refreshToken] = user.id;
 
   return {
     id: user.id,
@@ -77,8 +82,23 @@ export async function authenticateUser(userLoginDto: UserLoginDTO) {
     role: user.role,
     avatar: user.avatar,
     token,
+    refreshToken
   };
 }
+
+export async function getToken(refreshToken: string,userId:string) {
+  if((refreshToken in refreshTokens) && (refreshTokens[refreshToken]) == userId){
+    const user :any = await User.findOne({where:{id:userId}});
+    
+    if(!user) throw new Error("User is not found");
+
+    let token = user.generateToken();
+
+    return token;
+  }
+
+}
+
 
 export async function updateUser(content: any, id: string, file: any) {
   let user: any = await User.findOne({
