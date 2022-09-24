@@ -3,7 +3,9 @@
   "packageManager": "yarn@3.2.3",
   "description": "",
   "dependencies": {
+    "@bull-board/express": "^4.3.1",
     "bcryptjs": "^2.4.3",
+    "bull": "^4.9.0",
     "class-validator": "^0.13.2",
     "dotenv": "^16.0.2",
     "exceljs": "^4.3.0",
@@ -17,6 +19,7 @@
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",
     "@types/bcryptjs": "^2.4.2",
+    "@types/bull": "^3.15.9",
     "@types/express": "^4.17.14",
     "@types/jsonwebtoken": "^8.5.9",
     "@types/multer": "^1.4.7",

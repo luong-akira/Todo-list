@@ -1,14 +1,12 @@
 import { validateOrReject } from "class-validator";
 import { UpdateUserDto, UserLoginDTO, UserRegisterDTO } from "../dtos/user.dto";
-import { Request } from "express";
-import { comparePassword, generateHashedPassword } from "../utils/bcrypt.util";
-import path from "path";
-import fs from "fs";
+import { UPLOAD_FOLDER_CONFIG } from "../configs/constants.config";
+import { comparePassword } from "../utils/bcrypt.util";
 import User from "../models/user.model";
-import { Sequelize, Op } from "sequelize";
-import Todo from "../models/todo.model";
+import {  Op } from "sequelize";
 import { sequelize } from "../configs/db.config";
-import { ROOT_DIR, UPLOAD_FOLDER_CONFIG } from "../configs/constants.config";
+import Todo from "../models/todo.model";
+
 
 export async function createUser(userRegisterDto: UserRegisterDTO) {
   await validateOrReject(userRegisterDto);

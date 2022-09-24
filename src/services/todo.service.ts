@@ -13,6 +13,7 @@ import { parseIntQuery } from "../utils/parseIntQuery.util";
 import path from "path";
 import User from "../models/user.model";
 import { ResourceConfig } from "../configs/enviroment.config";
+import Bull from "bull";
 
 export async function getAllTodos(
   page: number,
@@ -138,7 +139,7 @@ export async function importTodoFromExcel(
 ) {
   // khac biet stream | hien tai
   // Excel.stream.xlsx
-
+  console.log(userId);
   const workBook = new Excel.Workbook();
   await workBook.xlsx.readFile(
     path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME, file.filename)
@@ -380,4 +381,36 @@ export async function exportToExcelStream(
   await workbook.commit();
 
   return `${ResourceConfig.baseUrl}/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${UPLOAD_FOLDER_CONFIG.EXPORTDIR}/${filename}`;
+}
+
+
+export const excelQueue = new Bull("import-export-excel");
+
+excelQueue.process("import",5,async(job)=>{
+    const {userId,file,sheetNum} = job.data;
+    return await importTodoFromExcelStream(userId,file,sheetNum);
+  }
+);
+
+excelQueue.process("export",5,async(job)=>{
+    const {userId,requestPage,limit} = job.data;
+    return await exportToExcelStream(userId,requestPage,limit);
+  }
+)
+
+export async function importFromExcelFileStreamQueue(userId:string, file:any, sheetNum:number){
+  await excelQueue.add("import",{
+    userId,
+    file,
+    sheetNum
+  });
+}
+
+
+export async function exportToExcelFileStreamQueue(userId:string, requestPage:number, limit:number){
+  await excelQueue.add("export",{
+    userId,
+    requestPage,
+    limit
+  });
 }
