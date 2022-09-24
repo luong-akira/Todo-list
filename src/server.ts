@@ -1,11 +1,24 @@
-import express, { Request, Response, Express } from "express";
+import express, { Express } from "express";
 import userRoutes from "./routes/user.route";
 import todoRoutes from "./routes/todo.route";
-import path from "path";
 import { sequelize } from "./configs/db.config";
-import * as dotenv from "dotenv";
 import { ROOT_DIR, UPLOAD_FOLDER_CONFIG } from "./configs/constants.config";
+import { ExpressAdapter } from "@bull-board/express";
+import {BullAdapter} from '@bull-board/api/bullAdapter';
+import {createBullBoard} from '@bull-board/api';
+import path from "path";
+import * as dotenv from "dotenv";
 dotenv.config();
+
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath('/admin/queues');
+
+import { excelQueue } from "./services/todo.service";
+
+const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
+  queues: [new BullAdapter(excelQueue)],
+  serverAdapter: serverAdapter,
+});
 
 const app: Express = express();
 
@@ -28,6 +41,8 @@ app.use(
 );
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+app.use('/admin/queues', serverAdapter.getRouter());
 
 app.use("/api/users", userRoutes);
 app.use("/api/todos", todoRoutes);
