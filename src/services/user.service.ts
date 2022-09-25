@@ -10,7 +10,7 @@ import Todo from "../models/todo.model";
 
 export async function createUser(userRegisterDto: UserRegisterDTO) {
   await validateOrReject(userRegisterDto);
-
+  console.log(`Register in process ${process.pid}`)
   const { name, username, password, role, file } = userRegisterDto;
 
   const existedUser = await User.findOne({
@@ -52,6 +52,7 @@ export async function createUser(userRegisterDto: UserRegisterDTO) {
 
 export async function authenticateUser(userLoginDto: UserLoginDTO) {
   await validateOrReject(userLoginDto);
+  console.log(`Login in process ${process.pid}`)
 
   const { username, password } = userLoginDto;
 
