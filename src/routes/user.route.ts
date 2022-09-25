@@ -5,6 +5,7 @@ import {
   getUsers,
   updateAvatarForUser,
   updateUser,
+  getToken
 } from "../controllers/user.controller";
 import { isAuthenticated } from "../middlewares/isAuthenticated.middleware";
 import { role } from "../middlewares/role.middleware";
@@ -14,6 +15,7 @@ const router: Router = express.Router();
 
 router.post("/", upload.single("avatar"), register);
 router.post("/login", login);
+router.post("/token", getToken);
 router.get("/admin/getUsers", isAuthenticated, role(["admin"]), getUsers);
 router.post(
   "/admin/user/:id",
