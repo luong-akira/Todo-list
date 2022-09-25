@@ -6,16 +6,14 @@ import { ROOT_DIR, UPLOAD_FOLDER_CONFIG } from "./configs/constants.config";
 import { ExpressAdapter } from "@bull-board/express";
 import {BullAdapter} from '@bull-board/api/bullAdapter';
 import {createBullBoard} from '@bull-board/api';
-import path from "path";
 import * as dotenv from "dotenv";
-dotenv.config();
-
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/admin/queues');
-
 import { excelQueue } from "./services/todo.service";
+import path from "path";
+dotenv.config();
 
-const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
+createBullBoard({
   queues: [new BullAdapter(excelQueue)],
   serverAdapter: serverAdapter,
 });

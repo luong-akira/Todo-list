@@ -147,10 +147,6 @@ export const importFromExcelFile = async (req: Request, res: Response) => {
 
     await todoServices.importTodoFromExcel(userId, file, sheetNum);
 
-    fs.unlinkSync(
-      path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME, file.filename)
-    );
-
     res.status(201).json({ message: "Upload successfully" });
   } catch (errors: Error | any) {
     if (errors instanceof Error) {
@@ -208,10 +204,6 @@ export const importFromExcelFileStream = async (
     sheetNum = parseInt(sheetNum);
 
     await todoServices.importTodoFromExcelStream(userId, file, sheetNum);
-
-    fs.unlinkSync(
-      path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME, file.filename)
-    );
 
     res.status(201).json({ message: "Upload successfully" });
   } catch (errors: Error | any) {

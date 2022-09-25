@@ -14,6 +14,7 @@ import path from "path";
 import User from "../models/user.model";
 import { ResourceConfig } from "../configs/enviroment.config";
 import Bull from "bull";
+import fs from "fs";
 
 export async function getAllTodos(
   page: number,
@@ -191,6 +192,10 @@ export async function importTodoFromExcel(
       }
     })();
   });
+
+  fs.unlinkSync(
+    path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME, file.filename)
+  );
 }
 
 export async function exportToExcel(
@@ -308,6 +313,10 @@ export async function importTodoFromExcelStream(
       }
     }
   }
+
+  fs.unlinkSync(
+    path.join(ROOT_DIR, UPLOAD_FOLDER_CONFIG.DIRNAME, file.filename)
+  );
 }
 
 export async function exportToExcelStream(
@@ -385,18 +394,13 @@ export async function exportToExcelStream(
 
 
 export const excelQueue = new Bull("import-export-excel");
+let concurrency = 5;
 
-excelQueue.process("import",5,async(job:any)=>{
-    const {userId,file,sheetNum} = job.data;
-    return await importTodoFromExcelStream(userId,file,sheetNum);
-  }
-);
 
-excelQueue.process("export",5,async(job:any)=>{
-    const {userId,requestPage,limit} = job.data;
-    return await exportToExcelStream(userId,requestPage,limit);
-  }
-)
+excelQueue.process("import",concurrency,path.join(ROOT_DIR,"src","utils","importProcess.ts"));
+
+excelQueue.process("export",concurrency,path.join(ROOT_DIR,"src","utils","exportProcess.ts"));
+
 
 export async function importFromExcelFileStreamQueue(userId:string, file:any, sheetNum:number){
   await excelQueue.add("import",{
