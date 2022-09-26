@@ -11,15 +11,15 @@ import {
   exportToExcel,
   importFromExcelFileStream,
   exportToExcelStream,
-  importFromExcelFileStreamQueue,
-  exportToExcelStreamQueue
+  importFromExcelFileQueue,
+  exportToExcelQueue,
 } from "../controllers/todo.controller";
 import upload from "../configs/multer.config";
 
 router.get("/", isAuthenticated, getAllTodos);
 router.get("/exportToExcel", isAuthenticated, exportToExcel);
 router.get("/exportToExcelStream", isAuthenticated, exportToExcelStream);
-router.get("/exportToExcelStreamQueue", isAuthenticated, exportToExcelStreamQueue);
+router.get("/exportToExcelQueue", isAuthenticated, exportToExcelQueue);
 router.get("/:id", isAuthenticated, getTodoById);
 router.post("/", isAuthenticated, createTodo);
 router.put("/:id", isAuthenticated, updateTodo);
@@ -38,10 +38,10 @@ router.post(
 );
 
 router.post(
-  "/importFromExcelStreamQueue",
+  "/importFromExcelQueue",
   isAuthenticated,
   upload.single("excel"),
-  importFromExcelFileStreamQueue
+  importFromExcelFileQueue
 );
 
 // import todo from excel (by user) - exceljs

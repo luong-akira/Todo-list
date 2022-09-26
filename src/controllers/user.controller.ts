@@ -9,6 +9,8 @@ import {
   UserLoginDTO,
   UserRegisterDTO,
 } from "../dtos/user.dto";
+import { ioServer, socketClient } from "../server";
+import colors from "colors/safe";
 dotenv.config();
 
 // Desc       register
@@ -43,6 +45,10 @@ export const register = async (req: Request, res: Response) => {
 // Access     PUBLIC
 export const login = async (req: Request, res: Response) => {
   try {
+    socketClient.emit(
+      "hello",
+      "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book"
+    );
     const { username, password } = req.body;
     let userLoginDto = new UserLoginDTO(username, password);
 
@@ -63,10 +69,10 @@ export const login = async (req: Request, res: Response) => {
 // Access     PUBLIC
 export const getToken = async (req: Request, res: Response) => {
   try {
-    const {refreshToken,userId} = req.body;
-    let token = await userService.getToken(refreshToken,userId);
+    const { refreshToken, userId } = req.body;
+    let token = await userService.getToken(refreshToken, userId);
 
-    res.status(200).json({token});
+    res.status(200).json({ token });
   } catch (errors: Error | any) {
     if (errors instanceof Error) {
       res.status(500).json({ error: errors.message });

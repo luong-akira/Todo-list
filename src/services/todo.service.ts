@@ -10,11 +10,13 @@ import { TodoDto } from "../dtos/todo.dto";
 import Todo from "../models/todo.model";
 import Excel from "exceljs";
 import { parseIntQuery } from "../utils/parseIntQuery.util";
-import path from "path";
 import User from "../models/user.model";
 import { ResourceConfig } from "../configs/enviroment.config";
-import Bull from "bull";
+import { excelQueue } from "../queue/importExportQueue";
+import path, { join } from "path";
 import fs from "fs";
+import ImportExport from "../models/importExport.model";
+import { socketClient } from "../server";
 
 export async function getAllTodos(
   page: number,
@@ -266,7 +268,7 @@ export async function exportToExcel(
     )
   );
 
-  return `${ResourceConfig.baseUrl}/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${UPLOAD_FOLDER_CONFIG.EXPORTDIR}/${filename}`;
+  return `/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${UPLOAD_FOLDER_CONFIG.EXPORTDIR}/${filename}`;
 }
 
 export async function importTodoFromExcelStream(
@@ -389,32 +391,106 @@ export async function exportToExcelStream(
 
   await workbook.commit();
 
-  return `${ResourceConfig.baseUrl}/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${UPLOAD_FOLDER_CONFIG.EXPORTDIR}/${filename}`;
+  return `/${UPLOAD_FOLDER_CONFIG.DIRNAME}/${UPLOAD_FOLDER_CONFIG.EXPORTDIR}/${filename}`;
 }
 
-
-export const excelQueue = new Bull("import-export-excel");
-let concurrency = 5;
-
-
-excelQueue.process("import",concurrency,path.join(ROOT_DIR,"src","utils","importProcess.ts"));
-
-excelQueue.process("export",concurrency,path.join(ROOT_DIR,"src","utils","exportProcess.ts"));
-
-
-export async function importFromExcelFileStreamQueue(userId:string, file:any, sheetNum:number){
-  await excelQueue.add("import",{
+export async function importFromExcelFileQueue(
+  userId: string,
+  file: any,
+  sheetNum: number
+) {
+  await excelQueue.add("import", {
     userId,
     file,
-    sheetNum
+    sheetNum,
   });
 }
 
-
-export async function exportToExcelFileStreamQueue(userId:string, requestPage:number, limit:number){
-  await excelQueue.add("export",{
+export async function exportToExcelFileQueue(
+  userId: string,
+  requestPage: number,
+  limit: number
+) {
+  await excelQueue.add("export", {
     userId,
     requestPage,
-    limit
+    limit,
   });
 }
+
+excelQueue.on("waiting", async (job: any, result: any) => {
+  if (job.name == "import") {
+  } else if (job.name == "export") {
+  }
+});
+
+excelQueue.on("active", async (job, result) => {
+  if (job.name == "import") {
+    let importJob: any = await ImportExport.findOne({
+      where: { userId: job.data.userId, jobId: job.id },
+    });
+
+    if (!importJob) return;
+    importJob.status = "active";
+    socketClient.emit("completed", `Import has been actived`);
+    await importJob.save();
+  } else if (job.name == "export") {
+    let exportJob: any = await ImportExport.findOne({
+      where: { userId: job.data.userId, jobId: job.id },
+    });
+
+    if (!exportJob) return;
+    exportJob.status = "active";
+    socketClient.emit("active", `Export has been actived`);
+    await exportJob.save();
+  }
+});
+
+excelQueue.on("completed", async (job, result) => {
+  if (job.name == "import") {
+    let importJob: any = await ImportExport.findOne({
+      where: { userId: job.data.userId, jobId: job.id },
+    });
+
+    if (!importJob) return;
+    importJob.status = "completed";
+    socketClient.emit("completed", `Import has been completed`);
+    await importJob.save();
+  } else if (job.name == "export") {
+    if (job.name == "export") {
+      let exportJob: any = await ImportExport.findOne({
+        where: { userId: job.data.userId, jobId: job.id },
+      });
+      if (!exportJob) return;
+      exportJob.status = "completed";
+      exportJob.file = job.returnvalue;
+
+      socketClient.emit(
+        "completed",
+        `Export has been completed with link: ${job.returnvalue}`
+      );
+      await exportJob.save();
+    }
+  }
+});
+
+excelQueue.on("failed", async (job, result) => {
+  if (job.name == "import") {
+    let importJob: any = await ImportExport.findOne({
+      where: { userId: job.data.userId, jobId: job.id },
+    });
+    if (!importJob) return;
+    importJob.status = "failed";
+    socketClient.emit("completed", `Import has been failed`);
+    await importJob.save();
+  } else if ((job.name = "export")) {
+    let exportJob: any = await ImportExport.findOne({
+      where: { userId: job.data.userId, jobId: job.id },
+    });
+
+    if (!exportJob) return;
+    exportJob.status = "failed";
+    socketClient.emit("failed", `Export has been failed`);
+    await exportJob.save();
+  }
+});

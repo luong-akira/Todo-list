@@ -7,6 +7,7 @@ import fs from "fs";
 import { userInfo } from "os";
 import { generateHashedPassword } from "../utils/bcrypt.util";
 import { ROOT_DIR } from "../configs/constants.config";
+import ImportExport from "./importExport.model";
 
 const User = sequelize.define("user", {
   id: {
@@ -54,6 +55,9 @@ const User = sequelize.define("user", {
 
 User.hasMany(Todo, { onDelete: "CASCADE", hooks: true });
 Todo.belongsTo(User);
+
+User.hasMany(ImportExport);
+ImportExport.belongsTo(User);
 
 User.prototype.generateToken = function (): string {
   let token = jwt.sign(
