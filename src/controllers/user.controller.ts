@@ -9,8 +9,7 @@ import {
   UserLoginDTO,
   UserRegisterDTO,
 } from "../dtos/user.dto";
-import { ioServer, socketClient } from "../server";
-import colors from "colors/safe";
+import { socketClient } from "../server";
 dotenv.config();
 
 // Desc       register

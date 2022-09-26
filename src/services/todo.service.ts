@@ -11,12 +11,12 @@ import Todo from "../models/todo.model";
 import Excel from "exceljs";
 import { parseIntQuery } from "../utils/parseIntQuery.util";
 import User from "../models/user.model";
-import { ResourceConfig } from "../configs/enviroment.config";
 import { excelQueue } from "../queue/importExportQueue";
-import path, { join } from "path";
+import path from "path";
 import fs from "fs";
 import ImportExport from "../models/importExport.model";
 import { socketClient } from "../server";
+import { ioServer } from "../server";
 
 export async function getAllTodos(
   page: number,
@@ -409,7 +409,8 @@ export async function importFromExcelFileQueue(
 export async function exportToExcelFileQueue(
   userId: string,
   requestPage: number,
-  limit: number
+  limit: number,
+  socketId?: string
 ) {
   await excelQueue.add("export", {
     userId,
@@ -420,6 +421,13 @@ export async function exportToExcelFileQueue(
 
 excelQueue.on("waiting", async (job: any, result: any) => {
   if (job.name == "import") {
+    await ImportExport.create({
+      jobId: job.id,
+      userId: job.data.userId,
+      type: "import",
+      status: "waiting",
+      file: "",
+    });
   } else if (job.name == "export") {
   }
 });
@@ -441,7 +449,7 @@ excelQueue.on("active", async (job, result) => {
 
     if (!exportJob) return;
     exportJob.status = "active";
-    socketClient.emit("active", `Export has been actived`);
+    // socketClient.emit("active", `Export has been actived`);
     await exportJob.save();
   }
 });
@@ -465,10 +473,12 @@ excelQueue.on("completed", async (job, result) => {
       exportJob.status = "completed";
       exportJob.file = job.returnvalue;
 
+      ioServer.emit("download_link", job.returnvalue);
       socketClient.emit(
         "completed",
-        `Export has been completed with link: ${job.returnvalue}`
+        `Export has been completed ${job.returnvalue}`
       );
+
       await exportJob.save();
     }
   }

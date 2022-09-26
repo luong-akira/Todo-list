@@ -1,18 +1,7 @@
-import Bull, { Job } from "bull";
-import path from "path";
-import colors from "colors/safe";
-import { ROOT_DIR } from "../configs/constants.config";
-import {
-  exportToExcelStream,
-  importTodoFromExcelStream,
-} from "../services/todo.service";
-import ImportExport from "../models/importExport.model";
+import Bull from "bull";
 import exportProcessor from "./exportProcessor";
 import importProcessor from "./importProcessor";
-export const excelQueue = new Bull(
-  "import-export-excel",
-  "redis://127.0.0.1:6379"
-);
+export const excelQueue = new Bull("import-export-excel");
 
 excelQueue.process("export", exportProcessor);
 excelQueue.process("import", importProcessor);

@@ -6,8 +6,6 @@ import {
   PAGING_CONFIG,
 } from "../configs/constants.config";
 import { parseIntQuery } from "../utils/parseIntQuery.util";
-import { ioServer } from "../server";
-import colors from "colors/safe";
 
 // Desc      get all todos from a user
 // Route     GET /todos
