@@ -416,19 +416,15 @@ export async function exportToExcelFileQueue(
     userId,
     requestPage,
     limit,
+    socketId,
   });
 }
 
 excelQueue.on("waiting", async (job: any, result: any) => {
   if (job.name == "import") {
-    await ImportExport.create({
-      jobId: job.id,
-      userId: job.data.userId,
-      type: "import",
-      status: "waiting",
-      file: "",
-    });
+    console.log("Import is waitng");
   } else if (job.name == "export") {
+    console.log("Export is waitng");
   }
 });
 
@@ -449,7 +445,7 @@ excelQueue.on("active", async (job, result) => {
 
     if (!exportJob) return;
     exportJob.status = "active";
-    // socketClient.emit("active", `Export has been actived`);
+    socketClient.emit("active", `Export has been actived`);
     await exportJob.save();
   }
 });
@@ -462,6 +458,7 @@ excelQueue.on("completed", async (job, result) => {
 
     if (!importJob) return;
     importJob.status = "completed";
+    importJob.file = job.data.file.filename;
     socketClient.emit("completed", `Import has been completed`);
     await importJob.save();
   } else if (job.name == "export") {
@@ -472,8 +469,7 @@ excelQueue.on("completed", async (job, result) => {
       if (!exportJob) return;
       exportJob.status = "completed";
       exportJob.file = job.returnvalue;
-
-      ioServer.emit("download_link", job.returnvalue);
+      ioServer.to(job.data.socketId).emit("download_link", job.returnvalue);
       socketClient.emit(
         "completed",
         `Export has been completed ${job.returnvalue}`

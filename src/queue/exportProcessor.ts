@@ -21,7 +21,7 @@ export default async function (job: Job) {
     status: "active",
     file: "",
   });
-  await sleepThread(30000);
+  await sleepThread(5000);
 
   return await exportToExcelStream(userId, requestPage, limit);
 }

@@ -23,7 +23,7 @@ export default async function (job: Job) {
     file: "",
   });
 
-  await sleepThread(30000);
+  await sleepThread(5000);
 
   return await importTodoFromExcelStream(userId, file, sheetNum);
 }

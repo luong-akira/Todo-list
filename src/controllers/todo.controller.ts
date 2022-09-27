@@ -258,7 +258,7 @@ export const importFromExcelFileQueue = async (req: Request, res: Response) => {
       sheetNum
     );
 
-    res.status(200).json("Upload successfully");
+    res.status(200).json("Upload is processing");
   } catch (errors: Error | any) {
     if (errors instanceof Error) {
       res.status(500).json({ error: errors.message });

@@ -3,7 +3,7 @@ import { exportToExcelFileQueue } from "./services/todo.service";
 
 export function sockImpl(ioServer: any) {
   ioServer.on("connection", (socket: any) => {
-    console.log("user has been connected");
+    console.log(colors.yellow(colors.underline("User has been connected...")));
 
     socket.on(
       "getDownloadLink",
